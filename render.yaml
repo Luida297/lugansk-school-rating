@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: lugansk-school-rating
+    runtime: static
+    buildCommand: echo "Static site ready"
+    staticPublishPath: .
+    autoDeploy: true

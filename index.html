@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Рейтинг развития школ Луганска</title>
+  <style>
+    :root {
+      --ink: #183a44; --muted: #60777b; --paper: #fffefa; --canvas: #e9efee;
+      --green: #1f5c59; --green-2: #347d70; --line: #cad9d5; --cream: #f4eee2;
+      --orange: #c96f46; --red: #a33f3f; --shadow: 0 14px 38px #17394418;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { position: sticky; z-index: 20; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 68px; padding: 10px max(20px, calc((100vw - 1440px) / 2)); color: white; background: #173f49; box-shadow: 0 3px 15px #102e3560; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark { display: grid; width: 39px; height: 39px; place-items: center; border: 1px solid #ffffff55; border-radius: 50%; color: #ffe2b8; font: bold 17px Georgia, serif; }
+    .brand b { display: block; font: 18px Georgia, serif; }
+    .brand small { color: #bed1d3; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .btn { padding: 9px 12px; border: 1px solid #b8cbc7; border-radius: 6px; color: var(--ink); background: white; font-size: 12px; font-weight: 700; }
+    .btn:hover { border-color: var(--green-2); }
+    .btn.primary { border-color: #d58a62; color: white; background: var(--orange); }
+    .btn.ghost { border-color: #ffffff4c; color: white; background: transparent; }
+    .btn.danger { border-color: #d9b3b3; color: var(--red); }
+    .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; max-width: 1440px; margin: 18px auto; padding: 0 18px 30px; }
+    .panel { border: 1px solid #d3dfdc; border-radius: 10px; background: var(--paper); box-shadow: var(--shadow); }
+    aside { align-self: start; position: sticky; top: 86px; overflow: hidden; }
+    .aside-head { padding: 18px; border-bottom: 1px solid var(--line); }
+    .aside-head h2, .workspace-head h1 { margin: 0; font: normal 23px/1.15 Georgia, serif; }
+    .aside-head p { margin: 7px 0 13px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .full { width: 100%; }
+    .school-list { max-height: calc(100vh - 245px); overflow: auto; padding: 7px; }
+    .school-empty { margin: 14px 9px; padding: 18px 10px; border: 1px dashed var(--line); color: var(--muted); text-align: center; font-size: 11px; line-height: 1.5; }
+    .school-item { width: 100%; margin-bottom: 5px; padding: 11px; border: 0; border-left: 3px solid transparent; border-radius: 5px; color: var(--ink); background: transparent; text-align: left; }
+    .school-item:hover { background: #eef5f2; }
+    .school-item.active { border-left-color: var(--orange); background: #e4efea; }
+    .school-item b { display: block; margin-bottom: 4px; font-size: 12px; }
+    .school-item span { color: var(--muted); font-size: 10px; }
+    .item-score { float: right; color: var(--green) !important; font-weight: 800; }
+    main { min-width: 0; }
+    .welcome { padding: 55px 35px; text-align: center; }
+    .welcome .bigmark { display: grid; width: 70px; height: 70px; margin: 0 auto 17px; place-items: center; border-radius: 50%; color: white; background: var(--green); font: 29px Georgia, serif; }
+    .welcome h1 { margin: 0 0 9px; font: 28px Georgia, serif; }
+    .welcome p { max-width: 580px; margin: 0 auto 20px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .workspace-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 22px 24px; border-bottom: 1px solid var(--line); }
+    .workspace-head p { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
+    .status-pill { padding: 7px 10px; border-radius: 20px; white-space: nowrap; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .status-pill.ready { color: #185546; background: #d8eee5; }
+    .status-pill.draft { color: #85512f; background: #f8e8cf; }
+    .summary { display: grid; grid-template-columns: 150px repeat(3, 1fr); gap: 10px; padding: 18px 24px; background: #f8f5ed; }
+    .score-card, .stat { min-height: 90px; padding: 14px; border: 1px solid #ddd8c9; border-radius: 7px; background: white; }
+    .score-card { color: white; background: var(--green); }
+    .score-card small, .stat small { display: block; margin-bottom: 8px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .score-card strong { font: 32px Georgia, serif; }
+    .score-card strong span { font: 13px Arial, sans-serif; opacity: .7; }
+    .stat strong { display: block; font-size: 21px; }
+    .stat span { color: var(--muted); font-size: 10px; }
+    .progress { height: 5px; margin-top: 11px; overflow: hidden; border-radius: 3px; background: #dce5e2; }
+    .progress i { display: block; height: 100%; background: var(--orange); }
+    .tabs { display: flex; overflow-x: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: white; }
+    .tab { padding: 13px 17px; border: 0; border-bottom: 3px solid transparent; white-space: nowrap; color: var(--muted); background: transparent; font-size: 11px; font-weight: 800; }
+    .tab.active { border-bottom-color: var(--orange); color: var(--ink); }
+    .content { padding: 20px 24px 28px; }
+    .block-card { margin-bottom: 15px; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
+    .block-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 13px 16px; background: #e5efeb; }
+    .block-head h3 { margin: 0; font-size: 13px; }
+    .block-head span { color: var(--muted); font-size: 10px; }
+    .block-total { min-width: 58px; font-size: 16px !important; font-weight: 800; text-align: right; }
+    .indicator { display: grid; grid-template-columns: 43px minmax(190px, 1fr) 105px 100px minmax(150px, .75fr); gap: 10px; align-items: center; padding: 11px 14px; border-top: 1px solid #e1e9e7; }
+    .indicator:first-of-type { border-top: 0; }
+    .code { color: var(--orange); font-size: 11px; font-weight: 800; }
+    .indicator-name b { display: block; font-size: 11px; }
+    .indicator-name small { color: var(--muted); font-size: 9px; }
+    .score-input { width: 100%; padding: 8px; border: 1px solid #afc3bf; border-radius: 5px; color: var(--ink); background: white; }
+    .score-input:focus, textarea:focus, input:focus, select:focus { outline: 2px solid #55a18b50; border-color: var(--green-2); }
+    .verify { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+    .verify input { width: 16px; height: 16px; accent-color: var(--green); }
+    .note-input { width: 100%; padding: 8px; border: 1px solid #d0dcda; border-radius: 5px; font-size: 10px; }
+    .ranking-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .ranking-tools select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); background: white; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); background: #eef4f1; font-size: 9px; letter-spacing: .05em; text-transform: uppercase; }
+    td.num, th.num { text-align: right; }
+    .muted { color: var(--muted); }
+    .rank { color: var(--orange); font: bold 18px Georgia, serif; }
+    .notice { margin-bottom: 15px; padding: 12px 14px; border-left: 4px solid var(--orange); background: #fff1df; font-size: 11px; line-height: 1.5; }
+    dialog { width: min(500px, calc(100% - 30px)); padding: 0; border: 0; border-radius: 10px; color: var(--ink); background: var(--paper); box-shadow: 0 20px 80px #0c272c75; }
+    dialog::backdrop { background: #0b28309a; }
+    .dialog-head { padding: 19px 22px; color: white; background: var(--green); }
+    .dialog-head h2 { margin: 0; font: 21px Georgia, serif; }
+    .dialog-body { padding: 20px 22px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .field input, .field select, .field textarea { width: 100%; padding: 10px; border: 1px solid #b8cbc7; border-radius: 5px; background: white; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 5px; }
+    .hidden { display: none !important; }
+    #toast { position: fixed; z-index: 50; right: 20px; bottom: 20px; max-width: 360px; padding: 12px 16px; border-radius: 6px; color: white; background: #163f49; box-shadow: var(--shadow); font-size: 11px; opacity: 0; transform: translateY(10px); transition: .2s; pointer-events: none; }
+    #toast.show { opacity: 1; transform: none; }
+    @media (max-width: 950px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static; }
+      .school-list { max-height: 240px; }
+      .summary { grid-template-columns: 1fr 1fr; }
+      .indicator { grid-template-columns: 42px 1fr 90px; }
+      .verify, .note-input { grid-column: 2 / -1; }
+    }
+    @media (max-width: 620px) {
+      .topbar { position: static; align-items: flex-start; flex-direction: column; }
+      .layout { margin-top: 10px; padding: 0 10px 20px; }
+      .summary { grid-template-columns: 1fr; }
+      .workspace-head { flex-direction: column; }
+      .indicator { grid-template-columns: 36px 1fr; }
+      .score-input, .verify, .note-input { grid-column: 2; }
+      .content, .workspace-head, .summary { padding-left: 14px; padding-right: 14px; }
+    }
+    @page { size: A4 landscape; margin: 10mm; }
+    @media print {
+      body { background: white; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .topbar, aside, .tabs, .actions, .note-input, .verify, .score-input, .no-print { display: none !important; }
+      .layout { display: block; max-width: none; margin: 0; padding: 0; }
+      .panel { border: 0; box-shadow: none; }
+      .summary { grid-template-columns: repeat(4, 1fr); }
+      .indicator { grid-template-columns: 40px 1fr 80px; }
+      .indicator::after { content: attr(data-print-score); text-align: right; font-weight: bold; }
+      .block-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="mark">Л</div><div><b>Рейтинг развития школ</b><small>город Луганск · рабочая программа</small></div></div>
+    <div class="actions">
+      <button class="btn ghost" type="button" id="rankingBtn">Сводный рейтинг</button>
+      <button class="btn ghost" type="button" id="exportBtn">Экспорт JSON</button>
+      <button class="btn ghost" type="button" id="importBtn">Импорт</button>
+      <button class="btn ghost" type="button" id="csvBtn">CSV</button>
+      <button class="btn primary" type="button" onclick="window.print()">Печать / PDF</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="aside-head"><h2>Организации</h2><p>Данные сохраняются только в этом браузере.</p><button class="btn primary full" id="addBtn" type="button">+ Добавить школу</button></div>
+      <div class="school-list" id="schoolList"></div>
+    </aside>
+
+    <main class="panel" id="mainPanel">
+      <section class="welcome" id="welcome">
+        <div class="bigmark">100</div><h1>Расчёт рейтинга</h1>
+        <p>Добавьте образовательную организацию и внесите нормированные баллы от 0 до 100 по каждому показателю. Программа рассчитает блоки, проверит полноту и сформирует рейтинг.</p>
+        <button class="btn primary" type="button" id="welcomeAddBtn">Добавить первую школу</button>
+      </section>
+
+      <section id="workspace" class="hidden">
+        <div class="workspace-head">
+          <div><h1 id="schoolTitle"></h1><p id="schoolMeta"></p></div>
+          <div class="actions no-print"><button class="btn" type="button" id="editBtn">Изменить</button><button class="btn danger" type="button" id="deleteBtn">Удалить</button></div>
+          <span class="status-pill draft" id="statusPill">Черновик</span>
+        </div>
+        <div class="summary">
+          <div class="score-card"><small>Предварительный балл</small><strong id="totalScore">0,0 <span>/ 100</span></strong></div>
+          <div class="stat"><small>Заполнено</small><strong id="filledStat">0 / 22</strong><span>показателя</span><div class="progress"><i id="filledBar" style="width:0"></i></div></div>
+          <div class="stat"><small>Подтверждено</small><strong id="verifiedStat">0 / 22</strong><span>источниками данных</span><div class="progress"><i id="verifiedBar" style="width:0"></i></div></div>
+          <div class="stat"><small>Позиция в группе</small><strong id="rankStat">—</strong><span id="rankCaption">после допуска</span></div>
+        </div>
+        <div class="tabs"><button class="tab active" data-view="indicators" type="button">Показатели</button><button class="tab" data-view="blocks" type="button">Итоги по блокам</button><button class="tab" data-view="card" type="button">Контрольная карточка</button></div>
+        <div class="content" id="content"></div>
+      </section>
+
+      <section id="ranking" class="hidden">
+        <div class="workspace-head"><div><h1>Сводный рейтинг</h1><p>Ранжируются только полностью заполненные и подтверждённые карточки.</p></div><button class="btn no-print" type="button" id="backBtn">Вернуться к школе</button></div>
+        <div class="content"><div class="notice">Предварительные карточки показаны для контроля, но место им не присваивается. Сравнение выполняется только внутри выбранной сопоставимой группы.</div><div class="ranking-tools"><label for="groupFilter">Группа: <select id="groupFilter"></select></label><button class="btn" id="printRankingBtn" type="button">Печать рейтинга</button></div><div id="rankingTable"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="schoolDialog">
+    <form method="dialog" id="schoolForm">
+      <div class="dialog-head"><h2 id="dialogTitle">Новая школа</h2></div>
+      <div class="dialog-body">
+        <input type="hidden" id="schoolId">
+        <div class="field"><label for="schoolName">Полное наименование</label><input id="schoolName" required maxlength="180" placeholder="Например: ЛГ № 1"></div>
+        <div class="field"><label for="schoolGroup">Сопоставимая группа</label><input id="schoolGroup" required maxlength="80" list="groupsList" placeholder="Например: общеобразовательные школы"><datalist id="groupsList"></datalist></div>
+        <div class="field"><label for="schoolPeriod">Отчётный период</label><input id="schoolPeriod" required maxlength="30" value="2026/2027 учебный год"></div>
+        <div class="dialog-actions"><button class="btn" value="cancel" type="button" id="cancelDialogBtn">Отмена</button><button class="btn primary" value="default" type="submit">Сохранить</button></div>
+      </div>
+    </form>
+  </dialog>
+  <input class="hidden" type="file" id="fileInput" accept="application/json,.json">
+  <div id="toast"></div>
+
+  <script>
+    "use strict";
+    const BLOCKS = [
+      { id: 1, name: "Безопасность, доступность и инфраструктура", weight: 20, items: [["1.1", "Подтверждённая готовность обязательных систем", 8], ["1.2", "Устранение замечаний в срок", 5], ["1.3", "Доступность образовательной среды", 4], ["1.4", "Готовность учебной и цифровой инфраструктуры", 3]] },
+      { id: 2, name: "Образовательная динамика", weight: 20, items: [["2.1", "Положительная индивидуальная динамика", 8], ["2.2", "Освоение базового уровня", 7], ["2.3", "Устойчивость результатов", 5]] },
+      { id: 3, name: "Посещаемость и поддержка обучающихся", weight: 15, items: [["3.1", "Необоснованные пропуски", 5], ["3.2", "Своевременность организованной поддержки", 5], ["3.3", "Учебное благополучие и включённость", 5]] },
+      { id: 4, name: "Возможности для развития", weight: 15, items: [["4.1", "Охват дополнительным образованием", 6], ["4.2", "Доступность программ без отбора", 4], ["4.3", "Охват проектной и профориентационной деятельностью", 5]] },
+      { id: 5, name: "Педагогическая команда", weight: 10, items: [["5.1", "Укомплектованность учебной нагрузки", 4], ["5.2", "Стабильность кадрового обеспечения", 3], ["5.3", "Наставничество и применение обучения", 3]] },
+      { id: 6, name: "Открытость и обратная связь", weight: 10, items: [["6.1", "Полнота и актуальность сайта", 4], ["6.2", "Своевременность ответов", 3], ["6.3", "Решение подтверждённых вопросов", 3]] },
+      { id: 7, name: "Развитие и вклад в городское образование", weight: 10, items: [["7.1", "Исполнение плана развития", 4], ["7.2", "Межшкольное сотрудничество", 3], ["7.3", "Участие сообщества в развитии школы", 3]] }
+    ];
+    const ITEMS = BLOCKS.flatMap(block => block.items.map(item => ({ code: item[0], name: item[1], weight: item[2], block: block.id })));
+    const STORAGE_KEY = "lugansk-school-rating-v1";
+    let state = loadState();
+    let selectedId = state.schools[0]?.id || null;
+    let activeView = "indicators";
+
+    const byId = id => document.getElementById(id);
+    const format = number => number.toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+    const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    function loadState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (isValidState(parsed)) return parsed;
+      } catch (error) { console.warn("Не удалось прочитать сохранённые данные", error); }
+      return { version: 1, schools: [] };
+    }
+
+    function isValidState(candidate) {
+      if (!candidate || candidate.version !== 1 || !Array.isArray(candidate.schools)) return false;
+      const ids = new Set();
+      return candidate.schools.every(school => {
+        if (!school || typeof school.id !== "string" || !school.id || ids.has(school.id) || typeof school.name !== "string" || !school.name.trim() || typeof school.group !== "string" || !school.group.trim() || typeof school.period !== "string" || !school.period.trim() || !school.values || typeof school.values !== "object" || Array.isArray(school.values)) return false;
+        ids.add(school.id);
+        return Object.entries(school.values).every(([code, entry]) => ITEMS.some(item => item.code === code) && entry && typeof entry === "object" && (entry.score === null || (Number.isFinite(entry.score) && entry.score >= 0 && entry.score <= 100)) && typeof entry.verified === "boolean" && typeof entry.note === "string");
+      });
+    }
+
+    function saveState(message) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (message) toast(message);
+    }
+
+    function getSchool() { return state.schools.find(school => school.id === selectedId); }
+    function getEntry(school, code) { return school.values?.[code] || { score: null, verified: false, note: "" }; }
+    function hasScore(entry) { return Number.isFinite(entry.score) && entry.score >= 0 && entry.score <= 100; }
+
+    function metrics(school) {
+      let total = 0, filled = 0, verified = 0;
+      const blockScores = {};
+      BLOCKS.forEach(block => {
+        let points = 0, blockFilled = 0;
+        block.items.forEach(([code, , weight]) => {
+          const entry = getEntry(school, code);
+          if (hasScore(entry)) { points += entry.score * weight / 100; filled++; blockFilled++; }
+          if (hasScore(entry) && entry.verified) verified++;
+        });
+        total += points;
+        blockScores[block.id] = { points, filled: blockFilled, count: block.items.length, weight: block.weight };
+      });
+      return { total, filled, verified, complete: filled === ITEMS.length, ready: filled === ITEMS.length && verified === ITEMS.length, blockScores };
+    }
+
+    function render() {
+      renderSchoolList();
+      const school = getSchool();
+      byId("welcome").classList.toggle("hidden", Boolean(school) || !byId("ranking").classList.contains("hidden"));
+      byId("workspace").classList.toggle("hidden", !school || !byId("ranking").classList.contains("hidden"));
+      if (school && byId("ranking").classList.contains("hidden")) renderWorkspace(school);
+      renderGroupsList();
+    }
+
+    function renderSchoolList() {
+      const list = byId("schoolList");
+      if (!state.schools.length) { list.innerHTML = '<div class="school-empty">Список пуст. Создайте первую карточку образовательной организации.</div>'; return; }
+      list.innerHTML = state.schools.map(school => {
+        const m = metrics(school);
+        return `<button class="school-item ${school.id === selectedId ? "active" : ""}" data-id="${escapeHtml(school.id)}" type="button"><span class="item-score">${format(m.total)}</span><b>${escapeHtml(school.name)}</b><span>${escapeHtml(school.group)} · ${m.filled}/${ITEMS.length}</span></button>`;
+      }).join("");
+      list.querySelectorAll(".school-item").forEach(button => button.addEventListener("click", () => { selectedId = button.dataset.id; showWorkspace(); render(); }));
+    }
+
+    function renderWorkspace(school) {
+      const m = metrics(school);
+      byId("schoolTitle").textContent = school.name;
+      byId("schoolMeta").textContent = `${school.group} · ${school.period}`;
+      byId("totalScore").innerHTML = `${format(m.total)} <span>/ 100</span>`;
+      byId("filledStat").textContent = `${m.filled} / ${ITEMS.length}`;
+      byId("verifiedStat").textContent = `${m.verified} / ${ITEMS.length}`;
+      byId("filledBar").style.width = `${m.filled / ITEMS.length * 100}%`;
+      byId("verifiedBar").style.width = `${m.verified / ITEMS.length * 100}%`;
+      const pill = byId("statusPill");
+      pill.textContent = m.ready ? "Допущено" : "Черновик";
+      pill.className = `status-pill ${m.ready ? "ready" : "draft"}`;
+      const rank = getRank(school);
+      byId("rankStat").textContent = rank ? `${rank.place} из ${rank.total}` : "—";
+      byId("rankCaption").textContent = rank ? "в сопоставимой группе" : "после допуска";
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.view === activeView));
+      if (activeView === "indicators") renderIndicators(school, m);
+      if (activeView === "blocks") renderBlocks(school, m);
+      if (activeView === "card") renderControlCard(school, m);
+    }
+
+    function renderIndicators(school, m) {
+      byId("content").innerHTML = `<div class="notice">Введите нормированный балл показателя от 0 до 100, рассчитанный по его паспорту. Отметка «подтверждено» ставится только после проверки источника оператором рейтинга.</div>` + BLOCKS.map(block => {
+        const bm = m.blockScores[block.id];
+        return `<section class="block-card"><div class="block-head"><div><h3>${block.id}. ${escapeHtml(block.name)}</h3><span>${bm.filled}/${bm.count} показателей заполнено</span></div><span>Вес ${block.weight}</span><span class="block-total">${format(bm.points)} / ${block.weight}</span></div>${block.items.map(([code, name, weight]) => {
+          const entry = getEntry(school, code);
+          return `<div class="indicator" data-code="${code}" data-print-score="${hasScore(entry) ? format(entry.score) : "—"}"><span class="code">${code}</span><div class="indicator-name"><b>${escapeHtml(name)}</b><small>вес ${weight} балл.</small></div><input class="score-input" data-field="score" type="number" min="0" max="100" step="0.1" inputmode="decimal" value="${hasScore(entry) ? entry.score : ""}" placeholder="0–100" aria-label="Балл ${code}"><label class="verify"><input data-field="verified" type="checkbox" ${entry.verified ? "checked" : ""} ${hasScore(entry) ? "" : "disabled"}> подтверждено</label><input class="note-input" data-field="note" value="${escapeHtml(entry.note || "")}" maxlength="240" placeholder="Источник / примечание" aria-label="Примечание ${code}"></div>`;
+        }).join("")}</section>`;
+      }).join("");
+      byId("content").querySelectorAll(".indicator").forEach(row => {
+        row.querySelector('[data-field="score"]').addEventListener("change", event => updateEntry(school, row.dataset.code, "score", event.target.value));
+        row.querySelector('[data-field="verified"]').addEventListener("change", event => updateEntry(school, row.dataset.code, "verified", event.target.checked));
+        row.querySelector('[data-field="note"]').addEventListener("change", event => updateEntry(school, row.dataset.code, "note", event.target.value.trim()));
+      });
+    }
+
+    function renderBlocks(school, m) {
+      byId("content").innerHTML = `<div class="notice">Баллы блоков являются суммой взвешенных показателей. Незаполненные значения не заменяются нулями; до полного заполнения результат остаётся предварительным.</div><table><thead><tr><th>Блок</th><th class="num">Заполнено</th><th class="num">Вес</th><th class="num">Набрано</th><th class="num">Выполнение</th></tr></thead><tbody>${BLOCKS.map(block => { const bm = m.blockScores[block.id]; const percent = bm.weight ? bm.points / bm.weight * 100 : 0; return `<tr><td><b>${block.id}. ${escapeHtml(block.name)}</b></td><td class="num">${bm.filled}/${bm.count}</td><td class="num">${block.weight}</td><td class="num"><b>${format(bm.points)}</b></td><td class="num">${format(percent)}%</td></tr>`; }).join("")}<tr><td><b>Итого</b></td><td class="num">${m.filled}/${ITEMS.length}</td><td class="num"><b>100</b></td><td class="num"><b>${format(m.total)}</b></td><td class="num">${format(m.total)}%</td></tr></tbody></table>`;
+    }
+
+    function renderControlCard(school, m) {
+      const missing = ITEMS.filter(item => !hasScore(getEntry(school, item.code))).map(item => item.code);
+      const unverified = ITEMS.filter(item => hasScore(getEntry(school, item.code)) && !getEntry(school, item.code).verified).map(item => item.code);
+      byId("content").innerHTML = `<div class="notice">${m.ready ? "Карточка полностью заполнена и подтверждена. Школа допущена к ранжированию внутри своей группы." : "Карточка не допущена к ранжированию. Устраните замечания контрольного списка."}</div><table><tbody><tr><th>Организация</th><td>${escapeHtml(school.name)}</td></tr><tr><th>Группа</th><td>${escapeHtml(school.group)}</td></tr><tr><th>Период</th><td>${escapeHtml(school.period)}</td></tr><tr><th>Предварительный балл</th><td><b>${format(m.total)} из 100</b></td></tr><tr><th>Незаполненные показатели</th><td>${missing.length ? missing.join(", ") : "Нет"}</td></tr><tr><th>Не подтверждены</th><td>${unverified.length ? unverified.join(", ") : "Нет"}</td></tr><tr><th>Статус</th><td><b>${m.ready ? "Допущено к ранжированию" : "Черновик"}</b></td></tr></tbody></table>`;
+    }
+
+    function updateEntry(school, code, field, value) {
+      school.values ||= {};
+      school.values[code] ||= { score: null, verified: false, note: "" };
+      if (field === "score") {
+        if (value === "") { school.values[code].score = null; school.values[code].verified = false; }
+        else { const score = Number(value); school.values[code].score = Math.max(0, Math.min(100, score)); }
+      } else school.values[code][field] = value;
+      saveState(); render();
+    }
+
+    function getRank(school) {
+      if (!metrics(school).ready) return null;
+      const eligible = state.schools.filter(item => item.group === school.group && metrics(item).ready);
+      const publishedScore = Number(metrics(school).total.toFixed(1));
+      return { place: 1 + eligible.filter(item => Number(metrics(item).total.toFixed(1)) > publishedScore).length, total: eligible.length };
+    }
+
+    function renderRanking() {
+      const groups = [...new Set(state.schools.map(school => school.group))].sort((a, b) => a.localeCompare(b, "ru"));
+      const select = byId("groupFilter");
+      const current = select.value;
+      select.innerHTML = groups.map(group => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("");
+      if (groups.includes(current)) select.value = current;
+      const group = select.value;
+      const schools = state.schools.filter(school => school.group === group).sort((a, b) => {
+        const ma = metrics(a), mb = metrics(b);
+        return Number(mb.ready) - Number(ma.ready) || Number(mb.total.toFixed(1)) - Number(ma.total.toFixed(1)) || a.name.localeCompare(b.name, "ru");
+      });
+      const eligible = schools.filter(school => metrics(school).ready);
+      byId("rankingTable").innerHTML = groups.length ? `<table><thead><tr><th>Место</th><th>Организация</th><th class="num">Заполнено</th><th class="num">Подтверждено</th><th class="num">Итог</th><th>Статус</th></tr></thead><tbody>${schools.map(school => { const m = metrics(school); const publishedScore = Number(m.total.toFixed(1)); const place = m.ready ? 1 + eligible.filter(item => Number(metrics(item).total.toFixed(1)) > publishedScore).length : null; return `<tr><td>${m.ready ? `<span class="rank">${place}</span>` : "—"}</td><td><b>${escapeHtml(school.name)}</b><br><span class="muted">${escapeHtml(school.period)}</span></td><td class="num">${m.filled}/${ITEMS.length}</td><td class="num">${m.verified}/${ITEMS.length}</td><td class="num"><b>${format(m.total)}</b></td><td>${m.ready ? "Допущено" : "Черновик"}</td></tr>`; }).join("")}</tbody></table>` : '<div class="school-empty">Нет данных для формирования рейтинга.</div>';
+    }
+
+    function openSchoolDialog(school) {
+      byId("dialogTitle").textContent = school ? "Изменить карточку" : "Новая школа";
+      byId("schoolId").value = school?.id || "";
+      byId("schoolName").value = school?.name || "";
+      byId("schoolGroup").value = school?.group || "";
+      byId("schoolPeriod").value = school?.period || "2026/2027 учебный год";
+      byId("schoolDialog").showModal();
+      byId("schoolName").focus();
+    }
+
+    function submitSchool(event) {
+      event.preventDefault();
+      const id = byId("schoolId").value;
+      const data = { name: byId("schoolName").value.trim(), group: byId("schoolGroup").value.trim(), period: byId("schoolPeriod").value.trim() };
+      if (!data.name || !data.group || !data.period) return;
+      if (id) Object.assign(state.schools.find(school => school.id === id), data);
+      else { const school = { id: uid(), ...data, values: {} }; state.schools.push(school); selectedId = school.id; }
+      byId("schoolDialog").close(); saveState("Карточка сохранена"); showWorkspace(); render();
+    }
+
+    function deleteSchool() {
+      const school = getSchool();
+      if (!school || !confirm(`Удалить карточку «${school.name}»? Это действие нельзя отменить.`)) return;
+      state.schools = state.schools.filter(item => item.id !== school.id);
+      selectedId = state.schools[0]?.id || null; saveState("Карточка удалена"); render();
+    }
+
+    function exportJson() {
+      download(`rejting-shkol-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify({ ...state, exportedAt: new Date().toISOString() }, null, 2), "application/json");
+      toast("Резервная копия подготовлена");
+    }
+
+    function importJson(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!isValidState(parsed)) throw new Error("Неверный формат");
+          if (!confirm(`Заменить текущие данные? Будет загружено карточек: ${parsed.schools.length}.`)) return;
+          state = { version: 1, schools: parsed.schools }; selectedId = state.schools[0]?.id || null; saveState("Данные импортированы"); showWorkspace(); render();
+        } catch (error) { alert("Файл не соответствует формату программы."); }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCsv() {
+      const headers = ["Организация", "Группа", "Период", ...ITEMS.map(item => item.code), "Итог", "Статус"];
+      const rows = state.schools.map(school => { const m = metrics(school); return [school.name, school.group, school.period, ...ITEMS.map(item => hasScore(getEntry(school, item.code)) ? getEntry(school, item.code).score : ""), m.total.toFixed(2), m.ready ? "Допущено" : "Черновик"]; });
+      const csv = [headers, ...rows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+      download(`rejting-shkol-${new Date().toISOString().slice(0, 10)}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
+      toast("Таблица CSV подготовлена");
+    }
+
+    function download(name, content, type) {
+      const url = URL.createObjectURL(new Blob([content], { type }));
+      const link = document.createElement("a"); link.href = url; link.download = name; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function showWorkspace() { byId("ranking").classList.add("hidden"); }
+    function showRanking() { byId("welcome").classList.add("hidden"); byId("workspace").classList.add("hidden"); byId("ranking").classList.remove("hidden"); renderRanking(); }
+    function renderGroupsList() { byId("groupsList").innerHTML = [...new Set(state.schools.map(school => school.group))].map(group => `<option value="${escapeHtml(group)}"></option>`).join(""); }
+    function toast(message) { const node = byId("toast"); node.textContent = message; node.classList.add("show"); clearTimeout(toast.timer); toast.timer = setTimeout(() => node.classList.remove("show"), 2200); }
+
+    byId("addBtn").addEventListener("click", () => openSchoolDialog());
+    byId("welcomeAddBtn").addEventListener("click", () => openSchoolDialog());
+    byId("editBtn").addEventListener("click", () => openSchoolDialog(getSchool()));
+    byId("deleteBtn").addEventListener("click", deleteSchool);
+    byId("cancelDialogBtn").addEventListener("click", () => byId("schoolDialog").close());
+    byId("schoolForm").addEventListener("submit", submitSchool);
+    byId("rankingBtn").addEventListener("click", showRanking);
+    byId("backBtn").addEventListener("click", () => { showWorkspace(); render(); });
+    byId("groupFilter").addEventListener("change", renderRanking);
+    byId("printRankingBtn").addEventListener("click", () => window.print());
+    byId("exportBtn").addEventListener("click", exportJson);
+    byId("csvBtn").addEventListener("click", exportCsv);
+    byId("importBtn").addEventListener("click", () => byId("fileInput").click());
+    byId("fileInput").addEventListener("change", event => { if (event.target.files[0]) importJson(event.target.files[0]); event.target.value = ""; });
+    document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => { activeView = tab.dataset.view; render(); }));
+    render();
+  </script>
+</body>
+</html>
