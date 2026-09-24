@@ -81,6 +81,7 @@
     .verify input { width: 16px; height: 16px; accent-color: var(--green); }
     .note-input { width: 100%; padding: 8px; border: 1px solid #d0dcda; border-radius: 5px; font-size: 10px; }
     .ranking-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .ranking-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
     .ranking-tools select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); background: white; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; }
     th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
@@ -174,7 +175,7 @@
 
       <section id="ranking" class="hidden">
         <div class="workspace-head"><div><h1>Сводный рейтинг</h1><p>Ранжируются только полностью заполненные и подтверждённые карточки.</p></div><button class="btn no-print" type="button" id="backBtn">Вернуться к школе</button></div>
-        <div class="content"><div class="notice">Предварительные карточки показаны для контроля, но место им не присваивается. Сравнение выполняется только внутри выбранной сопоставимой группы.</div><div class="ranking-tools"><label for="groupFilter">Группа: <select id="groupFilter"></select></label><button class="btn" id="printRankingBtn" type="button">Печать рейтинга</button></div><div id="rankingTable"></div></div>
+        <div class="content"><div class="notice" id="rankingNotice">Предварительные карточки показаны для контроля, но место им не присваивается. Сравнение выполняется только внутри выбранной сопоставимой группы.</div><div class="ranking-tools"><div class="ranking-filters"><label for="groupFilter">Группа: <select id="groupFilter"></select></label><label for="rankingMode">Ранжирование: <select id="rankingMode"><option value="total">Итоговый балл</option><option value="indicator">По показателю</option></select></label><label for="indicatorFilter" id="indicatorFilterLabel" class="hidden">Показатель: <select id="indicatorFilter"></select></label></div><button class="btn" id="printRankingBtn" type="button">Печать рейтинга</button></div><div id="rankingTable"></div></div>
       </section>
     </main>
   </div>
@@ -348,12 +349,30 @@
       select.innerHTML = groups.map(group => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("");
       if (groups.includes(current)) select.value = current;
       const group = select.value;
+      const mode = byId("rankingMode").value;
+      byId("indicatorFilterLabel").classList.toggle("hidden", mode !== "indicator");
+      if (mode === "indicator") { renderIndicatorRanking(group, groups.length); return; }
+      byId("rankingNotice").textContent = "Предварительные карточки показаны для контроля, но место им не присваивается. Итоговое сравнение выполняется только внутри выбранной сопоставимой группы.";
       const schools = state.schools.filter(school => school.group === group).sort((a, b) => {
         const ma = metrics(a), mb = metrics(b);
         return Number(mb.ready) - Number(ma.ready) || Number(mb.total.toFixed(1)) - Number(ma.total.toFixed(1)) || a.name.localeCompare(b.name, "ru");
       });
       const eligible = schools.filter(school => metrics(school).ready);
       byId("rankingTable").innerHTML = groups.length ? `<table><thead><tr><th>Место</th><th>Организация</th><th class="num">Заполнено</th><th class="num">Подтверждено</th><th class="num">Итог</th><th>Статус</th></tr></thead><tbody>${schools.map(school => { const m = metrics(school); const publishedScore = Number(m.total.toFixed(1)); const place = m.ready ? 1 + eligible.filter(item => Number(metrics(item).total.toFixed(1)) > publishedScore).length : null; return `<tr><td>${m.ready ? `<span class="rank">${place}</span>` : "—"}</td><td><b>${escapeHtml(school.name)}</b><br><span class="muted">${escapeHtml(school.period)}</span></td><td class="num">${m.filled}/${ITEMS.length}</td><td class="num">${m.verified}/${ITEMS.length}</td><td class="num"><b>${format(m.total)}</b></td><td>${m.ready ? "Допущено" : "Черновик"}</td></tr>`; }).join("")}</tbody></table>` : '<div class="school-empty">Нет данных для формирования рейтинга.</div>';
+    }
+
+    function renderIndicatorRanking(group, hasGroups) {
+      const indicatorSelect = byId("indicatorFilter");
+      const selectedCode = ITEMS.some(item => item.code === indicatorSelect.value) ? indicatorSelect.value : ITEMS[0].code;
+      indicatorSelect.value = selectedCode;
+      const indicator = ITEMS.find(item => item.code === selectedCode);
+      const schools = state.schools.filter(school => school.group === group).sort((a, b) => {
+        const aEntry = getEntry(a, selectedCode), bEntry = getEntry(b, selectedCode);
+        return Number(hasScore(bEntry)) - Number(hasScore(aEntry)) || (hasScore(bEntry) ? bEntry.score : -1) - (hasScore(aEntry) ? aEntry.score : -1) || a.name.localeCompare(b.name, "ru");
+      });
+      const ranked = schools.filter(school => hasScore(getEntry(school, selectedCode)));
+      byId("rankingNotice").textContent = `Предварительное ранжирование по показателю ${indicator.code} «${indicator.name}». Место рассчитывается по введённому баллу внутри выбранной группы; подтверждение источника показано отдельно.`;
+      byId("rankingTable").innerHTML = hasGroups ? `<table><thead><tr><th>Место</th><th>Организация</th><th>Показатель</th><th class="num">Вес</th><th class="num">Балл</th><th>Подтверждение</th></tr></thead><tbody>${schools.map(school => { const entry = getEntry(school, selectedCode); const scored = hasScore(entry); const place = scored ? 1 + ranked.filter(item => getEntry(item, selectedCode).score > entry.score).length : null; return `<tr><td>${scored ? `<span class="rank">${place}</span>` : "—"}</td><td><b>${escapeHtml(school.name)}</b><br><span class="muted">${escapeHtml(school.period)}</span></td><td><b>${indicator.code}</b> ${escapeHtml(indicator.name)}</td><td class="num">${indicator.weight}</td><td class="num"><b>${scored ? format(entry.score) : "Нет данных"}</b></td><td>${scored && entry.verified ? "Подтверждено" : scored ? "Не подтверждено" : "—"}</td></tr>`; }).join("")}</tbody></table>` : '<div class="school-empty">Нет данных для формирования рейтинга.</div>';
     }
 
     function openSchoolDialog(school) {
@@ -429,11 +448,14 @@
     byId("rankingBtn").addEventListener("click", showRanking);
     byId("backBtn").addEventListener("click", () => { showWorkspace(); render(); });
     byId("groupFilter").addEventListener("change", renderRanking);
+    byId("rankingMode").addEventListener("change", renderRanking);
+    byId("indicatorFilter").addEventListener("change", renderRanking);
     byId("printRankingBtn").addEventListener("click", () => window.print());
     byId("exportBtn").addEventListener("click", exportJson);
     byId("csvBtn").addEventListener("click", exportCsv);
     byId("importBtn").addEventListener("click", () => byId("fileInput").click());
     byId("fileInput").addEventListener("change", event => { if (event.target.files[0]) importJson(event.target.files[0]); event.target.value = ""; });
+    byId("indicatorFilter").innerHTML = BLOCKS.map(block => `<optgroup label="${block.id}. ${escapeHtml(block.name)}">${block.items.map(([code, name]) => `<option value="${code}">${code} · ${escapeHtml(name)}</option>`).join("")}</optgroup>`).join("");
     document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => { activeView = tab.dataset.view; render(); }));
     render();
   </script>
