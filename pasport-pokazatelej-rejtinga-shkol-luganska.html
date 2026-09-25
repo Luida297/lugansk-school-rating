@@ -10,7 +10,8 @@
     body { margin: 0; }
     .toolbar { max-width: 1260px; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 20px auto; padding: 0 16px; }
     .toolbar p { margin: 0; font-size: 13px; line-height: 1.5; }
-    button { flex: none; padding: 11px 17px; border: 0; border-radius: 7px; background: #174b59; color: white; font: 700 13px Arial, sans-serif; cursor: pointer; }
+    .actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    button, .btn { flex: none; padding: 11px 17px; border: 0; border-radius: 7px; background: #174b59; color: white; font: 700 13px Arial, sans-serif; text-decoration: none; cursor: pointer; }
     button:hover { background: #326b79; }
     .paper { max-width: 1260px; margin: 0 auto 30px; padding: 43px 48px; background: #fffefa; box-shadow: 0 10px 32px #19384520; }
     .status { padding: 13px 16px; border-left: 4px solid #d98d5e; background: #fbf1e5; font-size: 12px; line-height: 1.55; }
@@ -76,7 +77,7 @@
   </style>
 </head>
 <body>
-  <div class="toolbar"><p>Поля с линиями и целевыми значениями можно заполнить прямо на странице. Для печати рекомендуется A3, альбомная ориентация.</p><button type="button" onclick="window.print()">Печать / PDF</button></div>
+  <div class="toolbar"><p>Поля с линиями и целевыми значениями можно заполнить прямо на странице. Для печати рекомендуется A3, альбомная ориентация.</p><div class="actions"><a class="btn" href="polozhenie-o-rejtinge-shkol-luganska.html">Положение о рейтинге</a><a class="btn" href="programma-rejtinga-razvitiya-shkol-luganska.html" onclick="if(location.protocol!=='file:')this.href='index.html'">Программа рейтинга</a><button type="button" onclick="window.print()">Печать / PDF</button></div></div>
   <main class="paper">
     <div class="status"><strong>ПРОЕКТ — показатели и цели не утверждены.</strong> Паспорт применяется только после проверки доступности данных, правовых оснований обработки, статистической сопоставимости школ и утверждения целевых значений до начала оцениваемого периода.</div>
     <p class="label">Приложение к положению о рейтинге</p>
