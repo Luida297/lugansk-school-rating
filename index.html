@@ -21,6 +21,7 @@
     .brand b { display: block; font: 18px Georgia, serif; }
     .brand small { color: #bed1d3; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
     .actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .actions a { text-decoration: none; }
     .btn { padding: 9px 12px; border: 1px solid #b8cbc7; border-radius: 6px; color: var(--ink); background: white; font-size: 12px; font-weight: 700; }
     .btn:hover { border-color: var(--green-2); }
     .btn.primary { border-color: #d58a62; color: white; background: var(--orange); }
@@ -136,6 +137,7 @@
   <header class="topbar">
     <div class="brand"><div class="mark">Л</div><div><b>Рейтинг развития школ</b><small>город Луганск · рабочая программа</small></div></div>
     <div class="actions">
+      <a class="btn ghost" href="pasport-pokazatelej-rejtinga-shkol-luganska.html">Паспорт показателей</a>
       <button class="btn ghost" type="button" id="rankingBtn">Сводный рейтинг</button>
       <button class="btn ghost" type="button" id="exportBtn">Экспорт JSON</button>
       <button class="btn ghost" type="button" id="importBtn">Импорт</button>
